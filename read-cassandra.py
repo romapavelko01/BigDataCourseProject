@@ -24,17 +24,17 @@ class CassandraClient:
 
     def category_a_query_1(self, start, end):
         query = "SELECT domain FROM all_primary_on_times_and_bots WHERE time_created >= '%s' AND time_created <= '%s'" \
-                "ALLOW FILTERING" % (start, end)
+                " ALLOW FILTERING" % (start, end)
         return self.session.execute(query)
 
     def category_a_query_2(self, start, end):
-        query = "SELECT domain FROM all_primary_on_times_and_bots WHERE is_bot is True AND time_created >= '%s'" \
-                "AND time_created <= '%s' ALLOW FILTERING" % (start, end)
+        query = "SELECT domain FROM all_primary_on_times_and_bots WHERE is_bot=1 AND time_created >= '%s'" \
+                " AND time_created <= '%s' ALLOW FILTERING" % (start, end)
         return self.session.execute(query)
 
     def category_a_query_3(self, start, end):
         query = "SELECT user_id, page_title FROM all_primary_on_times_and_bots WHERE time_created >= '%s' AND" \
-                "time_created <= '%s' ALLOW FILTERING" % (start, end)
+                " time_created <= '%s' ALLOW FILTERING" % (start, end)
         return self.session.execute(query)
 
     def category_b_query_1(self):
@@ -42,20 +42,20 @@ class CassandraClient:
         return self.session.execute(query)
 
     def category_b_query_2(self, user_id):
-        query = "SELECT page_url FROM pages_by_users WHERE user_id='%s'" % user_id
+        query = "SELECT page_url FROM pages_by_users WHERE user_id=%s" % user_id
         return self.session.execute(query)
 
     def category_b_query_3(self, domain):
-        query = "SELECT COUNT(*) AS count FROM pages_by_domains WHERE domain = '%s' ALLOW FILTERING" % domain
+        query = "SELECT COUNT(*) FROM pages_by_domains WHERE domain = '%s'" % domain
         return self.session.execute(query)
 
     def category_b_query_4(self, page_id):
-        query = "SELECT page_url FROM pages_by_page_id WHERE page_id='%s'" % page_id
+        query = "SELECT page_url FROM pages_by_page_id WHERE page_id=%s" % page_id
         return self.session.execute(query)
 
     def category_b_query_5(self, start, end):
         query = "SELECT user_id FROM all_primary_on_times_and_bots WHERE time_created >= '%s' AND" \
-                "time_created <= '%s' ALLOW FILTERING" % (start, end)
+                " time_created <= '%s' ALLOW FILTERING" % (start, end)
         return self.session.execute(query)
 
 
@@ -75,7 +75,7 @@ class FlaskAPI:
             if request.method == 'GET':
                 return jsonify(f"{self.__a_query_1()}")
 
-        @self.app.route('a_query_2', methods=['GET'])
+        @self.app.route('/a_query_2', methods=['GET'])
         def a_query_2():
             """
             curl -iX GET 'http://127.0.0.1:8080/a_query_2'
@@ -103,7 +103,7 @@ class FlaskAPI:
         def b_query_2():
             """
             curl -iX POST -H "Content-Type: application/json" \
-            -d '{"user_id": ""}' \
+            -d '{"user_id": 11260960}' \
             'http://127.0.0.1:8080/b_query_2'
             """
             if request.method == 'POST':
@@ -114,7 +114,7 @@ class FlaskAPI:
         def b_query_3():
             """
             curl -iX POST -H "Content-Type: application/json" \
-            -d '{"domain": ""}' \
+            -d '{"domain": "pl.wikipedia.org"}' \
             'http://127.0.0.1:8080/b_query_3'
             """
             if request.method == 'POST':
@@ -125,7 +125,7 @@ class FlaskAPI:
         def b_query_4():
             """
             curl -iX POST -H "Content-Type: application/json" \
-            -d '{"page_id": ""}' \
+            -d '{"page_id": "119170884"}' \
             'http://127.0.0.1:8080/b_query_4'
             """
             if request.method == 'POST':
@@ -136,7 +136,7 @@ class FlaskAPI:
         def b_query_5():
             """
             curl -iX POST -H "Content-Type: application/json" \
-            -d '{"start": "", "end": ""}' \
+            -d '{"start": "2022-06-11 10:33:00", "end": "2022-06-11 12:43:00"}' \
             'http://127.0.0.1:8080/b_query_5'
             """
             if request.method == 'POST':
@@ -159,7 +159,7 @@ class FlaskAPI:
 
             statistics = {
                 "time_start": start_time.strftime("%H:%M"),
-                "time_end": start_time + timedelta(hours=1),
+                "time_end": (start_time + timedelta(hours=1)).strftime("%H:%M"),
                 "statistics": []
             }
 
@@ -257,7 +257,7 @@ class FlaskAPI:
 
     def __b_query_3(self, data):
         try:
-            return {"number_of_articles": int(self.client.category_b_query_3(data["domain"])[0].count)}
+            return {"number_of_articles": self.client.category_b_query_3(data["domain"])[0].count}
         except KeyError as e:
             return jsonify(f"{e}"), 400
 
