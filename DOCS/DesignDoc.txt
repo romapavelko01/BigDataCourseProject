@@ -1,0 +1,22 @@
+Project authors:
+ - Roman Pavelko (github: https://github.com/romapavelko01)
+ - Nazar Dobrovolskyi (github: https://github.com/OutJeck)
+
+
+Reading the streaming data from the source https://stream.wikimedia.org/v2/stream/page-create was
+implemented using Python's library 'sseclient'.
+The data is then written to Cassandra, which was chosen for reasons of its simplicity, as it does not take much
+to write code that inserts data into Cassandra's tables, as well as to retrieve the data from the tables to perform
+data analysis as answers to the Category A and Category B requests.
+
+You can find our database's structure in the file CassandraDiagram.
+
+As you can see, we used 4 tables, and believe it to be the most efficient (or, at least, one of them) way
+to process the data and answer the questions, given in Category A and Category B
+ - table `all_primary_on_times_and_bots` has a Composite Key, which contains Partition Key `time_created` and
+   Clustering Key `is_bot`; partitioning on `time_created` helps to better filter information for all requests of
+   Category A and for requests 1, 5 of Category B, as these are the requests which explicitly demand certain time range,
+   is_bot column is used to filter rows which were indeed created by bots;
+ - tables `pages_by_users`, `pages_by_domains`, `pages_by_page_id` all help retrieve page data, filtering on
+   `user_id`, `domain` and `page_id` respectively; these tables are created in order to process the rest of the requests
+   in Category B.

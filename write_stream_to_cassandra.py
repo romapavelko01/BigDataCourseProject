@@ -25,7 +25,7 @@ class CassandraClient:
 
     def write_data(self, time_created, domain, user_id, is_bot, page_title, page_id, page_url):
         query1 = "INSERT INTO all_primary_on_times_and_bots (user_id, time_created, domain, is_bot, page_title, page_id, page_url)" \
-                 " VALUES (%d, '%s', '%s', %r, '%s', %d, '%s')" % (int(user_id), time_created, domain, is_bot, page_title, int(page_id), page_url)
+                 " VALUES (%d, '%s', '%s', %d, '%s', %d, '%s')" % (int(user_id), time_created, domain, is_bot, page_title, int(page_id), page_url)
 
         query2 = "INSERT INTO pages_by_users (user_id, page_id, page_title, page_url) VALUES (%d, %d, '%s', '%s')" \
                  % (int(user_id), page_id, page_title, page_url)
@@ -54,15 +54,20 @@ if __name__ == "__main__":
             page_data = "[" + event.data + "]"
             json_dict = json.loads(page_data)
             if json_dict:
-                all_data = json_dict[0]
-                # time_created, domain, user_id, is_bot, page_title, page_id
-                time_created = all_data['meta']['dt']
-                domain = all_data['meta']['domain']
-                user_id = all_data['performer']['user_id']
-                page_id = all_data['page_id']
-                page_title = all_data['page_title']
-                page_url = all_data["meta"]['uri']
-                is_bot = all_data['performer']['user_is_bot']
+                try:
+                    all_data = json_dict[0]
+                    # time_created, domain, user_id, is_bot, page_title, page_id
+                    time_created = all_data['meta']['dt']
+                    domain = all_data['meta']['domain']
+                    user_id = all_data['performer']['user_id']
+                    page_id = all_data['page_id']
+                    page_title = all_data['page_title'].replace("'", "''")
+                    page_url = all_data["meta"]['uri']
+
+                    is_bot = 1 if all_data['performer']['user_is_bot'] == 'true' else 0
+                except KeyError:
+                    continue
+
                 cassandra_client.write_data(time_created, domain, user_id, is_bot, page_title, page_id, page_url)
                 # print("written successfully")
                 # break
